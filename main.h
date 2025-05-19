@@ -3,6 +3,7 @@
 #include "nwpwin.h"
 
 #include <gdiplus.h>
+#pragma comment(lib, "gdiplus.lib")
 
 class gdiplus_application : public vsite::nwp::application
 {
@@ -18,8 +19,13 @@ public:
 };
 
 class main_window : public vsite::nwp::window {
+private:
+	Gdiplus::Image* m_pImage = nullptr;
+	std::wstring m_fileName;
+
 protected:
 	void on_paint(HDC hdc) override;
 	void on_command(int id) override;
 	void on_destroy() override;
+	bool on_erase_bkgnd(HDC) override { return true; }
 };
