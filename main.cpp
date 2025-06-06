@@ -15,8 +15,8 @@ void main_window::on_paint(HDC hdc)
 	graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
 	graphics.Clear(Color::White);
 
-	if (m_pImage)
-	{
+	if (m_pImage && !m_fileName.empty()) {
+
 		int imgWidth = m_pImage->GetWidth();
 		int imgHeight = m_pImage->GetHeight();
 
@@ -32,26 +32,24 @@ void main_window::on_paint(HDC hdc)
 
 		graphics.DrawImage(m_pImage.get(), x, y, newWidth, newHeight);
 
-		if (!m_fileName.empty())
-		{
-			FontFamily fontFamily(L"Arial");
-			Font font(&fontFamily, 12, FontStyleBold, UnitPoint);
+		std::filesystem::path f_path(m_fileName);
+		std::wstring f_name = f_path.filename();
 
-			StringFormat stringFormat;
-			stringFormat.SetAlignment(StringAlignmentCenter);
-			stringFormat.SetLineAlignment(StringAlignmentFar);
+		Font font(L"Arial", 12, FontStyleBold);
+		SolidBrush b(Color(128, 0, 0, 0));
+		SolidBrush w(Color::White);
 
-			RectF layoutRect((float)0, (float)(rect.bottom - 30), (float)rect.right, 30);
+		RectF layoutRect((float)0, (float)(rect.bottom - 30), (float)rect.right, 30);
+		RectF shadowRect = layoutRect;
+		shadowRect.X += 1;
+		shadowRect.Y += 1;
 
-			SolidBrush shadowBrush(Color(128, 0, 0, 0));
-			RectF shadowRect = layoutRect;
-			shadowRect.X += 1;
-			shadowRect.Y += 1;
-			graphics.DrawString(m_fileName.c_str(), -1, &font, shadowRect, &stringFormat, &shadowBrush);
+		StringFormat format;
+		format.SetAlignment(StringAlignmentCenter);
+		format.SetLineAlignment(StringAlignmentFar);
 
-			SolidBrush textBrush(Color(255, 255, 255, 255));
-			graphics.DrawString(m_fileName.c_str(), -1, &font, layoutRect, &stringFormat, &textBrush);
-		}
+		graphics.DrawString(f_name.c_str(), -1, &font, shadowRect, &format, &b);
+		graphics.DrawString(f_name.c_str(), -1, &font, layoutRect, &format, &w);
 	}
 }
 
@@ -63,14 +61,7 @@ void main_window::on_command(int id)
 	{
 		wchar_t path[MAX_PATH];
 		*path = 0;
-		wchar_t filter[] = L"Sve slike\0*.jpeg;*.jpg;*.png;*.bmp;*.gif;*.tiff;*.tif;*.emf\0"
-			L"JPEG slike\0*.jpeg;*.jpg\0"
-			L"PNG slike\0*.png\0"
-			L"BMP slike\0*.bmp\0"
-			L"GIF slike\0*.gif\0"
-			L"TIFF slike\0*.tiff;*.tif\0"
-			L"EMF slike\0*.emf\0"
-			L"Sve datoteke\0*.*\0\0";
+		wchar_t filter[] = L"JPEG\0*.jpeg\0PNG\0*.png\0BMP\0*.bmp\0GIF\0*.gif\0TIFF\0*.tiff\0EMF\0*.emf\0";
 
 		OPENFILENAMEW ofn;
 		ZeroMemory(&ofn, sizeof ofn);
@@ -80,24 +71,22 @@ void main_window::on_command(int id)
 		ofn.lpstrFile = path;
 		ofn.nMaxFile = MAX_PATH;
 		ofn.lpstrFilter = filter;
-		ofn.lpstrTitle = L"Choose an image";
-		ofn.nFilterIndex = 1;
-		ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_PATHMUSTEXIST;
+		ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
 		if (GetOpenFileNameW(&ofn))
 		{
-			std::filesystem::path file_path(path);
-			m_fileName = file_path.filename().wstring();
+			std::filesystem::path f_path(path);
+			m_fileName = f_path.filename();
 			m_pImage = std::make_unique<Gdiplus::Image>(path);
 
 			if (!m_pImage || m_pImage->GetLastStatus() != Gdiplus::Ok)
 			{
 				m_pImage.reset();
-				MessageBox(*this, L"Error!", L"Warning", MB_OK | MB_ICONWARNING);
+				MessageBox(*this, L"Failed to load image!", L"Error", MB_OK | MB_ICONERROR);
 			}
 			else
 			{
-				InvalidateRect(*this, NULL, TRUE);
+				InvalidateRect(*this, nullptr, TRUE);
 			}
 		}
 	}

@@ -5,6 +5,7 @@
 
 #include <gdiplus.h>
 #include <memory>
+#include <string>
 
 class gdiplus_application : public vsite::nwp::application
 {
