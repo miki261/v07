@@ -1,9 +1,10 @@
+#define NOMINMAX
 #include <windows.h>
 #include <tchar.h>
 #include "nwpwin.h"
 
 #include <gdiplus.h>
-#pragma comment(lib, "gdiplus.lib")
+#include <memory>
 
 class gdiplus_application : public vsite::nwp::application
 {
@@ -20,7 +21,7 @@ public:
 
 class main_window : public vsite::nwp::window {
 private:
-	Gdiplus::Image* m_pImage = nullptr;
+	std::unique_ptr<Gdiplus::Image> m_pImage;
 	std::wstring m_fileName;
 
 protected:
